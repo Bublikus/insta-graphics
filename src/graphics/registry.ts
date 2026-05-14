@@ -2,6 +2,7 @@ import type { BaseGraphicScene } from './base/BaseGraphicScene'
 import { DemoGradientScene } from './scenes/demo-gradient/DemoGradientScene'
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-pulse-vortex/HypnoticPulseVortexScene'
+import { PixelMoireTunnelScene } from './scenes/pixel-moire-tunnel/PixelMoireTunnelScene'
 
 export interface GraphicDefinition {
   id: string
@@ -30,6 +31,13 @@ export const GRAPHICS: GraphicDefinition[] = [
     description:
       'Concentric neon rings with alternating rotations, breathing pulses, and ripple accents tuned for an addictive loop.',
     createScene: () => new HypnoticPulseVortexScene(),
+  },
+  {
+    id: 'pixel-moire-tunnel',
+    title: 'Pixel Moire Tunnel',
+    description:
+      'Pixelized square-ring tunnel with alternating drift, breathing cadence, and ripple surges for a retro hypnotic loop.',
+    createScene: () => new PixelMoireTunnelScene(),
   },
 ]
 
