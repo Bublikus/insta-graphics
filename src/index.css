@@ -169,11 +169,30 @@ body {
 }
 
 .graphic-group-label {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 6px;
   padding: 4px 2px;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
   color: #9ea4db;
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.graphic-group-label::before {
+  content: '▸';
+  color: #7e88f0;
+  transform: rotate(0deg);
+  transition: transform 140ms ease;
+}
+
+.graphic-group-item.is-open > .graphic-group-label::before {
+  transform: rotate(90deg);
 }
 
 .graphic-link {

@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { Link } from 'react-router-dom'
 import type { GraphicNode } from '../graphics/registry'
@@ -19,15 +20,56 @@ function buildIndentStyle(depth: number): CSSProperties {
   }
 }
 
-function renderTreeNodes(nodes: GraphicNode[], activeId: string, depth = 0): ReactElement[] {
+function collectExpandedGroupIds(nodes: GraphicNode[], activeId: string, expandedGroupIds: Set<string>): boolean {
+  let containsActive = false
+
+  for (const node of nodes) {
+    if (isGroupNode(node)) {
+      const groupContainsActive = collectExpandedGroupIds(node.children, activeId, expandedGroupIds)
+      if (groupContainsActive || node.id === activeId) {
+        expandedGroupIds.add(node.id)
+        containsActive = true
+      }
+      continue
+    }
+
+    if (node.id === activeId) {
+      containsActive = true
+    }
+  }
+
+  return containsActive
+}
+
+function renderTreeNodes(
+  nodes: GraphicNode[],
+  activeId: string,
+  expandedGroupIds: Set<string>,
+  onToggleGroup: (groupId: string) => void,
+  depth = 0,
+): ReactElement[] {
   return nodes.map((node) => {
     if (isGroupNode(node)) {
+      const isExpanded = expandedGroupIds.has(node.id)
+      const panelId = `${node.id}-panel`
+
       return (
-        <li key={node.id} className="graphic-group-item">
-          <div className="graphic-group-label" style={buildIndentStyle(depth)}>
+        <li key={node.id} className={`graphic-group-item ${isExpanded ? 'is-open' : 'is-closed'}`}>
+          <button
+            type="button"
+            className="graphic-group-label"
+            style={buildIndentStyle(depth)}
+            onClick={() => onToggleGroup(node.id)}
+            aria-expanded={isExpanded}
+            aria-controls={panelId}
+          >
             {node.title}
-          </div>
-          <ul className="graphic-sub-list">{renderTreeNodes(node.children, activeId, depth + 1)}</ul>
+          </button>
+          {isExpanded ? (
+            <ul id={panelId} className="graphic-sub-list">
+              {renderTreeNodes(node.children, activeId, expandedGroupIds, onToggleGroup, depth + 1)}
+            </ul>
+          ) : null}
         </li>
       )
     }
@@ -52,6 +94,30 @@ export function GraphicNavigator({
   previousId,
   nextId,
 }: GraphicNavigatorProps) {
+  const [manualExpandedGroupId, setManualExpandedGroupId] = useState<string | null>(null)
+
+  const activeExpandedGroupIds = useMemo(() => {
+    const groupIds = new Set<string>()
+    collectExpandedGroupIds(graphicTree, activeId, groupIds)
+    return groupIds
+  }, [activeId, graphicTree])
+
+  const expandedGroupIds = useMemo(() => {
+    if (activeExpandedGroupIds.size > 0) {
+      return activeExpandedGroupIds
+    }
+
+    if (manualExpandedGroupId === null) {
+      return new Set<string>()
+    }
+
+    return new Set<string>([manualExpandedGroupId])
+  }, [activeExpandedGroupIds, manualExpandedGroupId])
+
+  const onToggleGroup = (groupId: string) => {
+    setManualExpandedGroupId((current) => (current === groupId ? null : groupId))
+  }
+
   return (
     <nav className="graphic-nav" aria-label="Graphic navigation">
       <div className="graphic-nav-buttons">
@@ -62,7 +128,9 @@ export function GraphicNavigator({
           Next
         </Link>
       </div>
-      <ul className="graphic-link-list">{renderTreeNodes(graphicTree, activeId)}</ul>
+      <ul className="graphic-link-list">
+        {renderTreeNodes(graphicTree, activeId, expandedGroupIds, onToggleGroup)}
+      </ul>
     </nav>
   )
 }
