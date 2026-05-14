@@ -32,10 +32,10 @@ body {
 
 .app-shell {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 340px;
+  grid-template-columns: 320px minmax(320px, 1fr) 340px;
   gap: 24px;
   min-height: 100dvh;
-  max-width: 1440px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 20px;
 }
@@ -79,6 +79,14 @@ body {
   align-self: start;
   display: grid;
   gap: 14px;
+}
+
+.sidebar-left {
+  grid-column: 1;
+}
+
+.sidebar-right {
+  grid-column: 3;
 }
 
 .sidebar-panel {

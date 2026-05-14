@@ -361,12 +361,7 @@ function GraphicPage() {
 
   return (
     <main className="app-shell">
-      <GraphicRuntime
-        graphic={graphic}
-        restartNonce={restartNonce}
-        onCanvasChange={onCanvasChange}
-      />
-      <aside className="sidebar">
+      <aside className="sidebar sidebar-left">
         <section className="sidebar-panel">
           <h2>{graphic.title}</h2>
           <p>{graphic.description}</p>
@@ -380,6 +375,13 @@ function GraphicPage() {
             nextId={nextId}
           />
         </section>
+      </aside>
+      <GraphicRuntime
+        graphic={graphic}
+        restartNonce={restartNonce}
+        onCanvasChange={onCanvasChange}
+      />
+      <aside className="sidebar sidebar-right">
         <RecordingPanel
           isRecording={isRecording}
           isPaused={isPaused}
