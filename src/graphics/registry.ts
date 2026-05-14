@@ -1,6 +1,7 @@
 import type { BaseGraphicScene } from './base/BaseGraphicScene'
 import { DemoGradientScene } from './scenes/demo-gradient/DemoGradientScene'
 import { DemoGradientMemoryDriftScene } from './scenes/demo-gradient/DemoGradientMemoryDriftScene'
+import { DemoGradientVerticalSpinScene } from './scenes/demo-gradient/DemoGradientVerticalSpinScene'
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
@@ -48,6 +49,13 @@ export const GRAPHIC_TREE: GraphicNode[] = [
         description:
           'A deeper D-like neon drift with memorable floating particles and layered wave ribbons.',
         createScene: () => new DemoGradientMemoryDriftScene(),
+      },
+      {
+        id: 'demo-gradient-vertical-spin',
+        title: 'Demo Gradient: Vertical Spin Drift',
+        description:
+          'Vertical particle lift with rotating shards, luminous trails, and neon beam accents tuned for portrait framing.',
+        createScene: () => new DemoGradientVerticalSpinScene(),
       },
     ],
   },
