@@ -1,5 +1,6 @@
 import type { BaseGraphicScene } from './base/BaseGraphicScene'
 import { DemoGradientScene } from './scenes/demo-gradient/DemoGradientScene'
+import { DemoGradientMemoryDriftScene } from './scenes/demo-gradient/DemoGradientMemoryDriftScene'
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
@@ -31,10 +32,24 @@ function isGraphicGroupNode(node: GraphicNode): node is GraphicGroupNode {
 
 export const GRAPHIC_TREE: GraphicNode[] = [
   {
-    id: 'demo-gradient',
-    title: 'Demo Gradient',
-    description: 'Animated neon gradient bands and particles.',
-    createScene: () => new DemoGradientScene(),
+    id: 'demo-gradient-family',
+    title: 'Demo Gradient Family',
+    description: 'Neon gradient variations with drifting particle personalities.',
+    children: [
+      {
+        id: 'demo-gradient',
+        title: 'Demo Gradient',
+        description: 'Animated neon gradient bands and particles.',
+        createScene: () => new DemoGradientScene(),
+      },
+      {
+        id: 'demo-gradient-memory-drift',
+        title: 'Demo Gradient: Memory Drift',
+        description:
+          'A deeper D-like neon drift with memorable floating particles and layered wave ribbons.',
+        createScene: () => new DemoGradientMemoryDriftScene(),
+      },
+    ],
   },
   {
     id: 'glass-cube-bounce',

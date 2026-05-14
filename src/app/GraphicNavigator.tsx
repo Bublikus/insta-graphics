@@ -39,8 +39,7 @@ function renderTreeNodes(nodes: GraphicNode[], activeId: string, depth = 0): Rea
           to={`/g/${node.id}`}
           style={buildIndentStyle(depth)}
         >
-          <span>{node.title}</span>
-          <small>/{node.id}</small>
+          {node.title}
         </Link>
       </li>
     )

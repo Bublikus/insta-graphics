@@ -178,7 +178,6 @@ body {
 
 .graphic-link {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   text-decoration: none;
   color: #e7e9ff;
@@ -195,10 +194,6 @@ body {
 .graphic-link.is-active {
   border-color: #7e88f0;
   background: #252b4e;
-}
-
-.graphic-link small {
-  color: #9ea4db;
 }
 
 .recording-panel h3 {
