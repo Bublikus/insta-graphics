@@ -1,29 +1,18 @@
 import { BaseCanvas2DScene } from '../../base/BaseCanvas2DScene'
+import {
+  buildHypnoticRings,
+  buildLoopMotionState,
+  computeRippleBoost,
+  type HypnoticRingSpec,
+  type HypnoticVariantCore,
+  hueToColor,
+} from './hypnoticShared'
 
-interface VortexVariant {
+interface VortexVariant extends HypnoticVariantCore {
   id: 'calm' | 'energetic' | 'deep-hypnosis'
-  ringCount: number
-  breathCyclesPerLoop: number
-  minBreathScale: number
-  maxBreathScale: number
-  innerCyclesPerLoop: number
-  outerCyclesPerLoop: number
-  rippleCenters: number[]
-  glowStrength: number
-  hueDriftDeg: number
-}
-
-interface RingSpec {
-  radiusRatio: number
-  particleCount: number
-  direction: 1 | -1
-  cyclesPerLoop: number
-  phaseOffset: number
-  hueOffset: number
 }
 
 const TAU = Math.PI * 2
-const LOOP_MS = 12_000
 const BG_COLOR = '#05060e'
 const SELECTED_VARIANT_ID: VortexVariant['id'] = 'deep-hypnosis'
 
@@ -80,44 +69,20 @@ function getVariantById(id: VortexVariant['id']): VortexVariant {
   return fallback
 }
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value))
-}
-
-function sineLerp(min: number, max: number, progress: number): number {
-  return min + (max - min) * progress
-}
-
-function hueToColor(hueDeg: number, alpha: number): string {
-  const hue = ((hueDeg % 360) + 360) % 360
-  return `hsla(${hue.toFixed(1)} 96% 72% / ${clamp01(alpha).toFixed(3)})`
-}
-
 export class HypnoticPulseVortexScene extends BaseCanvas2DScene {
   private readonly variant = getVariantById(SELECTED_VARIANT_ID)
   private elapsedMs = 0
-  private rings: RingSpec[] = []
+  private rings: HypnoticRingSpec[] = []
 
   protected override afterResize(): void {
-    const ringCount = this.variant.ringCount
-    this.rings = Array.from({ length: ringCount }, (_, index) => {
-      const progress = ringCount <= 1 ? 0 : index / (ringCount - 1)
-      const direction: 1 | -1 = index % 2 === 0 ? 1 : -1
-      const easedProgress = Math.pow(progress, 0.9)
-      return {
-        radiusRatio: 0.12 + easedProgress * 0.78,
-        particleCount: Math.max(18, Math.round(24 + easedProgress * 58)),
-        direction,
-        cyclesPerLoop: Math.max(
-          1,
-          Math.round(
-            this.variant.innerCyclesPerLoop +
-              (this.variant.outerCyclesPerLoop - this.variant.innerCyclesPerLoop) * easedProgress,
-          ),
-        ),
-        phaseOffset: progress * 0.85,
-        hueOffset: progress * 88,
-      }
+    this.rings = buildHypnoticRings(this.variant.ringCount, this.variant, {
+      radiusStart: 0.12,
+      radiusSpan: 0.78,
+      minParticles: 18,
+      particleSpan: 58,
+      easingExponent: 0.9,
+      phaseSpan: 0.85,
+      hueSpan: 88,
     })
   }
 
@@ -141,12 +106,14 @@ export class HypnoticPulseVortexScene extends BaseCanvas2DScene {
     context.fillStyle = BG_COLOR
     context.fillRect(0, 0, width, height)
 
-    const loopProgress = (this.elapsedMs % LOOP_MS) / LOOP_MS
-    const breathProgress = (Math.sin(loopProgress * TAU * this.variant.breathCyclesPerLoop) + 1) * 0.5
-    const breathScale = sineLerp(this.variant.minBreathScale, this.variant.maxBreathScale, breathProgress)
-    const brightnessBreathProgress =
-      (Math.sin(loopProgress * TAU * this.variant.breathCyclesPerLoop - 0.68 * Math.PI) + 1) * 0.5
-    const baseHue = 208 + Math.sin(loopProgress * TAU) * this.variant.hueDriftDeg
+    const { loopProgress, breathScale, brightnessBreathProgress, baseHue } = buildLoopMotionState(
+      this.elapsedMs,
+      this.variant,
+      {
+        baseHue: 208,
+        brightnessPhaseOffsetRad: -0.68 * Math.PI,
+      },
+    )
 
     const centerGlow = context.createRadialGradient(centerX, centerY, 0, centerX, centerY, maxRadius * 0.95)
     centerGlow.addColorStop(0, 'rgba(255, 255, 255, 0.12)')
@@ -160,15 +127,14 @@ export class HypnoticPulseVortexScene extends BaseCanvas2DScene {
       const ringProgress = ring.radiusRatio
       const ringAngleOffset =
         ring.direction * loopProgress * TAU * ring.cyclesPerLoop + ring.phaseOffset * TAU
-      let ringRippleBoost = 0
-      for (const center of this.variant.rippleCenters) {
-        const ringRippleDistance = Math.abs(ringProgress - center)
-        const wrappedDistance = Math.min(ringRippleDistance, 1 - ringRippleDistance)
-        const spatialFalloff = Math.exp(-Math.pow(wrappedDistance * 10.5, 2))
-        const temporalDistance = Math.min(Math.abs(loopProgress - center), 1 - Math.abs(loopProgress - center))
-        const temporalFalloff = Math.exp(-Math.pow(temporalDistance * 28, 2))
-        ringRippleBoost += 0.13 * spatialFalloff * temporalFalloff
-      }
+      const ringRippleBoost = computeRippleBoost(
+        ringProgress,
+        loopProgress,
+        this.variant.rippleCenters,
+        10.5,
+        28,
+        0.13,
+      )
       const ringThickness = 0.65 + ringProgress * 1.8
 
       context.strokeStyle = hueToColor(baseHue + ring.hueOffset, 0.11 + ringRippleBoost * 0.5)
@@ -203,7 +169,14 @@ export class HypnoticPulseVortexScene extends BaseCanvas2DScene {
       }
     }
 
-    const vignette = context.createRadialGradient(centerX, centerY, maxRadius * 0.28, centerX, centerY, maxRadius * 1.28)
+    const vignette = context.createRadialGradient(
+      centerX,
+      centerY,
+      maxRadius * 0.28,
+      centerX,
+      centerY,
+      maxRadius * 1.28,
+    )
     vignette.addColorStop(0, 'rgba(0, 0, 0, 0)')
     vignette.addColorStop(1, 'rgba(0, 0, 0, 0.52)')
     context.fillStyle = vignette

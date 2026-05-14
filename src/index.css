@@ -147,6 +147,27 @@ body {
   gap: 8px;
 }
 
+.graphic-sub-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.graphic-group-item {
+  display: grid;
+  gap: 4px;
+}
+
+.graphic-group-label {
+  padding: 4px 2px;
+  color: #9ea4db;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .graphic-link {
   display: flex;
   justify-content: space-between;

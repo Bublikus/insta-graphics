@@ -3,7 +3,7 @@ import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from '
 import { GraphicRuntime } from '../graphics/GraphicRuntime'
 import {
   DEFAULT_GRAPHIC_ID,
-  GRAPHICS,
+  GRAPHIC_TREE,
   getGraphicById,
   getNextGraphicId,
   getPreviousGraphicId,
@@ -374,7 +374,7 @@ function GraphicPage() {
             Deep link: <code>{`/g/${graphic.id}`}</code>
           </p>
           <GraphicNavigator
-            graphics={GRAPHICS}
+            graphicTree={GRAPHIC_TREE}
             activeId={graphic.id}
             previousId={previousId}
             nextId={nextId}

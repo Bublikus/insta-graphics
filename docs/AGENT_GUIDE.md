@@ -9,6 +9,7 @@ Create a dedicated folder under:
 - `src/graphics/scenes/<scene-id>/`
 
 Use kebab-case ids because ids are used in URLs (`/g/<scene-id>`).
+For related ideas, create a shared parent folder and keep sibling sub-animations inside it.
 
 ## 2) Choose a base class
 
@@ -36,11 +37,9 @@ Lifecycle methods:
 Edit `src/graphics/registry.ts`:
 
 1. Import the scene class.
-2. Add a `GraphicDefinition` item with:
-   - `id`
-   - `title`
-   - `description`
-   - `createScene: () => new YourScene()`
+2. Register it as either:
+   - a leaf node with `id`, `title`, `description`, `createScene`
+   - or inside a group node with `children` for sub-animations.
 
 Once registered, the scene automatically appears in navigation and supports deep links.
 

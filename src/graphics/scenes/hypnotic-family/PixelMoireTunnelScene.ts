@@ -1,30 +1,20 @@
 import { BaseCanvas2DScene } from '../../base/BaseCanvas2DScene'
+import {
+  buildHypnoticRings,
+  buildLoopMotionState,
+  computeRippleBoost,
+  lerp,
+  type HypnoticRingSpec,
+  type HypnoticVariantCore,
+  hueToColor,
+} from './hypnoticShared'
 
-interface PixelTunnelVariant {
+interface PixelTunnelVariant extends HypnoticVariantCore {
   id: 'calm' | 'energetic' | 'deep-hypnosis'
-  ringCount: number
   cellSize: number
-  minBreathScale: number
-  maxBreathScale: number
-  breathCyclesPerLoop: number
-  innerCyclesPerLoop: number
-  outerCyclesPerLoop: number
-  rippleCenters: number[]
-  glowStrength: number
-  hueDriftDeg: number
-}
-
-interface RingSpec {
-  radiusRatio: number
-  particleCount: number
-  direction: 1 | -1
-  cyclesPerLoop: number
-  phaseOffset: number
-  hueOffset: number
 }
 
 const TAU = Math.PI * 2
-const LOOP_MS = 12_000
 const BG_COLOR = '#05060a'
 const SELECTED_VARIANT_ID: PixelTunnelVariant['id'] = 'deep-hypnosis'
 
@@ -84,19 +74,6 @@ function getVariantById(id: PixelTunnelVariant['id']): PixelTunnelVariant {
   return fallback
 }
 
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, value))
-}
-
-function lerp(min: number, max: number, progress: number): number {
-  return min + (max - min) * progress
-}
-
-function hueToColor(hueDeg: number, alpha: number): string {
-  const hue = ((hueDeg % 360) + 360) % 360
-  return `hsla(${hue.toFixed(1)} 96% 70% / ${clamp01(alpha).toFixed(3)})`
-}
-
 function squarePerimeterPoint(radius: number, progress: number): { x: number; y: number } {
   const normalized = ((progress % 1) + 1) % 1
   const segment = normalized * 4
@@ -125,28 +102,17 @@ function quantize(value: number, cellSize: number): number {
 export class PixelMoireTunnelScene extends BaseCanvas2DScene {
   private readonly variant = getVariantById(SELECTED_VARIANT_ID)
   private elapsedMs = 0
-  private rings: RingSpec[] = []
+  private rings: HypnoticRingSpec[] = []
 
   protected override afterResize(): void {
-    const ringCount = this.variant.ringCount
-    this.rings = Array.from({ length: ringCount }, (_, index) => {
-      const progress = ringCount <= 1 ? 0 : index / (ringCount - 1)
-      const easedProgress = Math.pow(progress, 0.88)
-
-      return {
-        radiusRatio: 0.12 + easedProgress * 0.76,
-        particleCount: Math.max(20, Math.round(28 + easedProgress * 64)),
-        direction: index % 2 === 0 ? 1 : -1,
-        cyclesPerLoop: Math.max(
-          1,
-          Math.round(
-            this.variant.innerCyclesPerLoop +
-              (this.variant.outerCyclesPerLoop - this.variant.innerCyclesPerLoop) * easedProgress,
-          ),
-        ),
-        phaseOffset: progress * 0.82,
-        hueOffset: progress * 92,
-      }
+    this.rings = buildHypnoticRings(this.variant.ringCount, this.variant, {
+      radiusStart: 0.12,
+      radiusSpan: 0.76,
+      minParticles: 20,
+      particleSpan: 64,
+      easingExponent: 0.88,
+      phaseSpan: 0.82,
+      hueSpan: 92,
     })
   }
 
@@ -170,28 +136,28 @@ export class PixelMoireTunnelScene extends BaseCanvas2DScene {
     context.fillStyle = BG_COLOR
     context.fillRect(0, 0, width, height)
 
-    const loopProgress = (this.elapsedMs % LOOP_MS) / LOOP_MS
-    const breathProgress = (Math.sin(loopProgress * TAU * this.variant.breathCyclesPerLoop) + 1) * 0.5
-    const breathScale = lerp(this.variant.minBreathScale, this.variant.maxBreathScale, breathProgress)
-    const brightnessBreathProgress =
-      (Math.sin(loopProgress * TAU * this.variant.breathCyclesPerLoop - 0.3 * Math.PI) + 1) * 0.5
-    const baseHue = 205 + Math.sin(loopProgress * TAU) * this.variant.hueDriftDeg
+    const { loopProgress, breathScale, brightnessBreathProgress, baseHue } = buildLoopMotionState(
+      this.elapsedMs,
+      this.variant,
+      {
+        baseHue: 205,
+        brightnessPhaseOffsetRad: -0.3 * Math.PI,
+      },
+    )
 
     for (const ring of this.rings) {
       const ringRadius = ring.radiusRatio * maxRadius * breathScale
       const ringProgress = ring.radiusRatio
       const ringPhase =
         ring.direction * loopProgress * ring.cyclesPerLoop + ring.phaseOffset + loopProgress * 0.15
-
-      let rippleBoost = 0
-      for (const center of this.variant.rippleCenters) {
-        const spatialDistance = Math.abs(ringProgress - center)
-        const wrappedSpatialDistance = Math.min(spatialDistance, 1 - spatialDistance)
-        const spatialFalloff = Math.exp(-Math.pow(wrappedSpatialDistance * 10.2, 2))
-        const temporalDistance = Math.min(Math.abs(loopProgress - center), 1 - Math.abs(loopProgress - center))
-        const temporalFalloff = Math.exp(-Math.pow(temporalDistance * 28, 2))
-        rippleBoost += 0.14 * spatialFalloff * temporalFalloff
-      }
+      const rippleBoost = computeRippleBoost(
+        ringProgress,
+        loopProgress,
+        this.variant.rippleCenters,
+        10.2,
+        28,
+        0.14,
+      )
 
       const ringBlockSize =
         this.variant.cellSize * (0.55 + ringProgress * 0.8 + brightnessBreathProgress * 0.2 + rippleBoost * 2.2)
@@ -220,7 +186,7 @@ export class PixelMoireTunnelScene extends BaseCanvas2DScene {
           ringBlockSize + this.variant.cellSize * particlePulse * 0.5,
         )
 
-        context.fillStyle = hueToColor(baseHue + ring.hueOffset + particleProgress * 20, alpha)
+        context.fillStyle = hueToColor(baseHue + ring.hueOffset + particleProgress * 20, alpha, 70)
         context.fillRect(x - blockSize * 0.5, y - blockSize * 0.5, blockSize, blockSize)
       }
     }

@@ -1,17 +1,35 @@
 import type { BaseGraphicScene } from './base/BaseGraphicScene'
 import { DemoGradientScene } from './scenes/demo-gradient/DemoGradientScene'
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
-import { HypnoticPulseVortexScene } from './scenes/hypnotic-pulse-vortex/HypnoticPulseVortexScene'
-import { PixelMoireTunnelScene } from './scenes/pixel-moire-tunnel/PixelMoireTunnelScene'
+import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
+import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
 
-export interface GraphicDefinition {
+interface GraphicLeafNode {
   id: string
   title: string
   description: string
   createScene: () => BaseGraphicScene
 }
 
-export const GRAPHICS: GraphicDefinition[] = [
+export interface GraphicGroupNode {
+  id: string
+  title: string
+  description: string
+  children: GraphicNode[]
+}
+
+export type GraphicNode = GraphicLeafNode | GraphicGroupNode
+
+export interface GraphicDefinition extends GraphicLeafNode {
+  parentId: string | null
+  depth: number
+}
+
+function isGraphicGroupNode(node: GraphicNode): node is GraphicGroupNode {
+  return 'children' in node
+}
+
+export const GRAPHIC_TREE: GraphicNode[] = [
   {
     id: 'demo-gradient',
     title: 'Demo Gradient',
@@ -26,20 +44,49 @@ export const GRAPHICS: GraphicDefinition[] = [
     createScene: () => new GlassCubeBounceScene(),
   },
   {
-    id: 'hypnotic-pulse-vortex',
-    title: 'Hypnotic Pulse Vortex',
-    description:
-      'Concentric neon rings with alternating rotations, breathing pulses, and ripple accents tuned for an addictive loop.',
-    createScene: () => new HypnoticPulseVortexScene(),
-  },
-  {
-    id: 'pixel-moire-tunnel',
-    title: 'Pixel Moire Tunnel',
-    description:
-      'Pixelized square-ring tunnel with alternating drift, breathing cadence, and ripple surges for a retro hypnotic loop.',
-    createScene: () => new PixelMoireTunnelScene(),
+    id: 'hypnotic-family',
+    title: 'Hypnotic Family',
+    description: 'Related tunnel/vortex loops sharing a common hypnotic base.',
+    children: [
+      {
+        id: 'hypnotic-pulse-vortex',
+        title: 'Hypnotic Pulse Vortex',
+        description:
+          'Concentric neon rings with alternating rotations, breathing pulses, and ripple accents tuned for an addictive loop.',
+        createScene: () => new HypnoticPulseVortexScene(),
+      },
+      {
+        id: 'pixel-moire-tunnel',
+        title: 'Pixel Moire Tunnel',
+        description:
+          'Pixelized square-ring tunnel with alternating drift, breathing cadence, and ripple surges for a retro hypnotic loop.',
+        createScene: () => new PixelMoireTunnelScene(),
+      },
+    ],
   },
 ]
+
+function flattenGraphicTree(
+  nodes: GraphicNode[],
+  parentId: string | null = null,
+  depth = 0,
+): GraphicDefinition[] {
+  return nodes.flatMap((node) => {
+    if (isGraphicGroupNode(node)) {
+      return flattenGraphicTree(node.children, node.id, depth + 1)
+    }
+
+    return [
+      {
+        ...node,
+        parentId,
+        depth,
+      },
+    ]
+  })
+}
+
+export const GRAPHICS: GraphicDefinition[] = flattenGraphicTree(GRAPHIC_TREE)
 
 function getFirstGraphic(): GraphicDefinition {
   const firstGraphic = GRAPHICS[0]
