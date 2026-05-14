@@ -1,6 +1,7 @@
 import type { BaseGraphicScene } from './base/BaseGraphicScene'
 import { DemoGradientScene } from './scenes/demo-gradient/DemoGradientScene'
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
+import { HypnoticPulseVortexScene } from './scenes/hypnotic-pulse-vortex/HypnoticPulseVortexScene'
 
 export interface GraphicDefinition {
   id: string
@@ -22,6 +23,13 @@ export const GRAPHICS: GraphicDefinition[] = [
     description:
       'Reflective glass cube with five textured spheres, 3D collisions, and realistic bouncing physics.',
     createScene: () => new GlassCubeBounceScene(),
+  },
+  {
+    id: 'hypnotic-pulse-vortex',
+    title: 'Hypnotic Pulse Vortex',
+    description:
+      'Concentric neon rings with alternating rotations, breathing pulses, and ripple accents tuned for an addictive loop.',
+    createScene: () => new HypnoticPulseVortexScene(),
   },
 ]
 
