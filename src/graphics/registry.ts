@@ -5,6 +5,7 @@ import { DemoGradientVerticalSpinScene } from './scenes/demo-gradient/DemoGradie
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
+import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
 
 interface GraphicLeafNode {
   id: string
@@ -65,6 +66,13 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     description:
       'Reflective glass cube with five textured spheres, 3D collisions, and realistic bouncing physics.',
     createScene: () => new GlassCubeBounceScene(),
+  },
+  {
+    id: 'three-d-worms',
+    title: '3D Worms',
+    description:
+      'Three pixel-styled worms moving randomly through a hidden 9x16x9 cube coordinate volume in portrait depth.',
+    createScene: () => new ThreeDWormsScene(),
   },
   {
     id: 'hypnotic-family',

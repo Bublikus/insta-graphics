@@ -17,6 +17,15 @@ type RecordingConfig = {
   durationSec: number
 }
 
+function getRouterBasename(): string {
+  const baseUrl = import.meta.env.BASE_URL
+  if (baseUrl === '/') {
+    return '/'
+  }
+
+  return baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl
+}
+
 function getPreferredMimeType(): string {
   const candidates = [
     'video/webm;codecs=vp9,opus',
@@ -414,7 +423,7 @@ function GraphicPage() {
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={getRouterBasename()}>
       <Routes>
         <Route path="/" element={<Navigate to={`/g/${DEFAULT_GRAPHIC_ID}`} replace />} />
         <Route path="/g/:graphicId" element={<GraphicPage />} />
