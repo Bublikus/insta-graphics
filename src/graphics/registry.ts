@@ -7,6 +7,7 @@ import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulse
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
 import { ThreeDWormsNeonPulseScene } from './scenes/three-d-worms/ThreeDWormsNeonPulseScene'
 import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
+import { ThreeDWormsThermalDepthScene } from './scenes/three-d-worms/ThreeDWormsThermalDepthScene'
 
 interface GraphicLeafNode {
   id: string
@@ -81,6 +82,13 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     description:
       'A more cinematic 3D worms sequel with drifting neon energy planes, ambient spark particles, and dynamic camera motion.',
     createScene: () => new ThreeDWormsNeonPulseScene(),
+  },
+  {
+    id: 'three-d-worms-thermal-depth',
+    title: '3D Worms: Thermal Depth',
+    description:
+      'Warmth-focused sequel with layered thermal depth planes, ember particles, and strong front-to-back heat cues.',
+    createScene: () => new ThreeDWormsThermalDepthScene(),
   },
   {
     id: 'hypnotic-family',
