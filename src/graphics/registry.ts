@@ -5,6 +5,7 @@ import { DemoGradientVerticalSpinScene } from './scenes/demo-gradient/DemoGradie
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
+import { ThreeDWormsNeonPulseScene } from './scenes/three-d-worms/ThreeDWormsNeonPulseScene'
 import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
 
 interface GraphicLeafNode {
@@ -73,6 +74,13 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     description:
       'Three pixel-styled worms moving randomly through a hidden 9x16x9 cube coordinate volume in portrait depth.',
     createScene: () => new ThreeDWormsScene(),
+  },
+  {
+    id: 'three-d-worms-neon-pulse',
+    title: '3D Worms: Neon Pulse',
+    description:
+      'A more cinematic 3D worms sequel with drifting neon energy planes, ambient spark particles, and dynamic camera motion.',
+    createScene: () => new ThreeDWormsNeonPulseScene(),
   },
   {
     id: 'hypnotic-family',
