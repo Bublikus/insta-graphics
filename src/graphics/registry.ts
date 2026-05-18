@@ -6,6 +6,7 @@ import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounce
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
 import { ThreeDWormsNeonPulseScene } from './scenes/three-d-worms/ThreeDWormsNeonPulseScene'
+import { ThreeDWormsNeonRushScene } from './scenes/three-d-worms/ThreeDWormsNeonRushScene'
 import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
 import { ThreeDWormsThermalDepthScene } from './scenes/three-d-worms/ThreeDWormsThermalDepthScene'
 
@@ -89,6 +90,13 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     description:
       'Warmth-focused sequel with layered thermal depth planes, ember particles, and strong front-to-back heat cues.',
     createScene: () => new ThreeDWormsThermalDepthScene(),
+  },
+  {
+    id: 'three-d-worms-neon-rush',
+    title: '3D Worms: Neon Rush',
+    description:
+      'High-energy neon sequel with expressive chroma ribbons, pulse bars, and vivid particle shards for maximum visibility.',
+    createScene: () => new ThreeDWormsNeonRushScene(),
   },
   {
     id: 'hypnotic-family',
