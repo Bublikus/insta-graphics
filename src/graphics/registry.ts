@@ -72,39 +72,46 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     createScene: () => new GlassCubeBounceScene(),
   },
   {
-    id: 'three-d-worms',
-    title: '3D Worms',
-    description:
-      'Three pixel-styled worms moving randomly through a hidden 9x16x9 cube coordinate volume in portrait depth.',
-    createScene: () => new ThreeDWormsScene(),
-  },
-  {
-    id: 'three-d-worms-neon-pulse',
-    title: '3D Worms: Neon Pulse',
-    description:
-      'A more cinematic 3D worms sequel with drifting neon energy planes, ambient spark particles, and dynamic camera motion.',
-    createScene: () => new ThreeDWormsNeonPulseScene(),
-  },
-  {
-    id: 'three-d-worms-thermal-depth',
-    title: '3D Worms: Thermal Depth',
-    description:
-      'Warmth-focused sequel with layered thermal depth planes, ember particles, and strong front-to-back heat cues.',
-    createScene: () => new ThreeDWormsThermalDepthScene(),
-  },
-  {
-    id: 'three-d-worms-neon-rush',
-    title: '3D Worms: Neon Rush',
-    description:
-      'High-energy neon sequel with expressive chroma ribbons, pulse bars, and vivid particle shards for maximum visibility.',
-    createScene: () => new ThreeDWormsNeonRushScene(),
-  },
-  {
-    id: 'three-d-worms-thermal-neon-borders',
-    title: '3D Worms: Thermal Neon Borders',
-    description:
-      'Warm neon sequel where all chamber borders glow with layered thin neon outlines for extra visibility and style.',
-    createScene: () => new ThreeDWormsThermalNeonBordersScene(),
+    id: 'three-d-worms-family',
+    title: '3D Worms Family',
+    description: '3D worms base scene plus expressive neon and thermal sequel variations.',
+    children: [
+      {
+        id: 'three-d-worms',
+        title: '3D Worms',
+        description:
+          'Three pixel-styled worms moving randomly through a hidden 9x16x9 cube coordinate volume in portrait depth.',
+        createScene: () => new ThreeDWormsScene(),
+      },
+      {
+        id: 'three-d-worms-neon-pulse',
+        title: '3D Worms: Neon Pulse',
+        description:
+          'A more cinematic 3D worms sequel with drifting neon energy planes, ambient spark particles, and dynamic camera motion.',
+        createScene: () => new ThreeDWormsNeonPulseScene(),
+      },
+      {
+        id: 'three-d-worms-thermal-depth',
+        title: '3D Worms: Thermal Depth',
+        description:
+          'Warmth-focused sequel with layered thermal depth planes, ember particles, and strong front-to-back heat cues.',
+        createScene: () => new ThreeDWormsThermalDepthScene(),
+      },
+      {
+        id: 'three-d-worms-neon-rush',
+        title: '3D Worms: Neon Rush',
+        description:
+          'High-energy neon sequel with expressive chroma ribbons, pulse bars, and vivid particle shards for maximum visibility.',
+        createScene: () => new ThreeDWormsNeonRushScene(),
+      },
+      {
+        id: 'three-d-worms-thermal-neon-borders',
+        title: '3D Worms: Thermal Neon Borders',
+        description:
+          'Warm neon sequel where all chamber borders glow with layered thin neon outlines for extra visibility and style.',
+        createScene: () => new ThreeDWormsThermalNeonBordersScene(),
+      },
+    ],
   },
   {
     id: 'hypnotic-family',
