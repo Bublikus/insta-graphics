@@ -19,6 +19,7 @@ import {
   RepeatWrapping,
   SRGBColorSpace,
   MathUtils,
+  Fog,
   Vector3,
 } from 'three'
 import { BaseThreeScene } from '../../base/BaseThreeScene'
@@ -34,6 +35,9 @@ interface Worm {
   body: GridCell[]
   previousBody: GridCell[]
   meshes: Mesh<BoxGeometry, MeshStandardMaterial>[]
+  material: MeshStandardMaterial
+  pulsePhase: number
+  pulseSpeed: number
   stepTimerMs: number
   readonly stepIntervalMs: number
 }
@@ -78,10 +82,11 @@ export class ThreeDWormsScene extends BaseThreeScene {
   private chamberShell: Mesh<BoxGeometry, MeshStandardMaterial> | null = null
   private chamberEdges: LineSegments | null = null
   private depthGridLines: LineSegments<BufferGeometry, LineBasicMaterial> | null = null
+  private elapsedMs = 0
 
   protected override afterSetup(): void {
-    this.scene.background = new Color('#05060a')
-    this.scene.fog = null
+    this.scene.background = new Color('#03040b')
+    this.scene.fog = new Fog('#03040b', 7, 18)
 
     const camera = this.camera as PerspectiveCamera
     camera.fov = 34
@@ -89,14 +94,16 @@ export class ThreeDWormsScene extends BaseThreeScene {
     camera.far = 100
     this.fitCameraToChamber(camera)
 
-    const ambient = new AmbientLight('#85a2ff', 0.5)
-    const keyLight = new DirectionalLight('#f8e6ff', 1.85)
-    keyLight.position.set(4.2, 5.4, 7.2)
-    const rimLight = new PointLight('#59a6ff', 16, 20, 1.8)
-    rimLight.position.set(-3.2, 1.7, -7.1)
-    const fillLight = new PointLight('#ffa3cf', 14, 18, 1.7)
-    fillLight.position.set(2.4, -2.7, 1.4)
-    this.scene.add(ambient, keyLight, rimLight, fillLight)
+    const ambient = new AmbientLight('#7388ff', 0.42)
+    const keyLight = new DirectionalLight('#e8efff', 1.32)
+    keyLight.position.set(4.4, 6.2, 6.9)
+    const leftRim = new PointLight('#3b79ff', 26, 24, 1.8)
+    leftRim.position.set(-3.7, 1.2, -6.8)
+    const rightRim = new PointLight('#ff6fd1', 20, 21, 1.8)
+    rightRim.position.set(3.2, -1.6, -2.4)
+    const depthLight = new PointLight('#55f2ff', 20, 22, 1.6)
+    depthLight.position.set(0, 0.8, -8.4)
+    this.scene.add(ambient, keyLight, leftRim, rightRim, depthLight)
 
     this.pixelTexture = this.createPixelTexture()
     this.createChamber()
@@ -109,12 +116,18 @@ export class ThreeDWormsScene extends BaseThreeScene {
   }
 
   protected override update(deltaMs: number): void {
+    this.elapsedMs += deltaMs
+
     for (const worm of this.worms) {
       worm.stepTimerMs += deltaMs
       while (worm.stepTimerMs >= worm.stepIntervalMs) {
         worm.stepTimerMs -= worm.stepIntervalMs
         this.stepWorm(worm)
       }
+
+      const pulse = Math.sin(this.elapsedMs * 0.001 * worm.pulseSpeed + worm.pulsePhase)
+      worm.material.emissiveIntensity = 0.42 + pulse * 0.2
+      worm.material.roughness = 0.36 + (pulse + 1) * 0.08
 
       const progress = worm.stepTimerMs / worm.stepIntervalMs
       this.syncWormMeshes(worm, progress)
@@ -141,12 +154,14 @@ export class ThreeDWormsScene extends BaseThreeScene {
     const chamberSize = this.chamberHalfSize.clone().multiplyScalar(2)
     const shellGeometry = new BoxGeometry(chamberSize.x, chamberSize.y, chamberSize.z)
     const shellMaterial = new MeshStandardMaterial({
-      color: '#111a2a',
-      metalness: 0.25,
-      roughness: 0.7,
-      emissive: '#070e1f',
-      emissiveIntensity: 0.55,
+      color: '#0b1331',
+      metalness: 0.16,
+      roughness: 0.83,
+      emissive: '#060d28',
+      emissiveIntensity: 0.45,
       side: BackSide,
+      transparent: true,
+      opacity: 0.94,
     })
     this.chamberShell = new Mesh(shellGeometry, shellMaterial)
     this.chamberShell.position.copy(this.chamberCenter)
@@ -155,9 +170,10 @@ export class ThreeDWormsScene extends BaseThreeScene {
 
     const edgeGeometry = new EdgesGeometry(shellGeometry)
     const edgeMaterial = new LineBasicMaterial({
-      color: '#6ba2ff',
+      color: '#84a8ff',
       transparent: true,
-      opacity: 0.33,
+      opacity: 0.5,
+      depthWrite: false,
     })
     this.chamberEdges = new LineSegments(edgeGeometry, edgeMaterial)
     this.chamberEdges.position.copy(this.chamberCenter)
@@ -172,25 +188,38 @@ export class ThreeDWormsScene extends BaseThreeScene {
       { x: 7, y: 8, z: 7 },
       { x: 4, y: 12, z: 4 },
     ]
-    const wormColors = ['#74f6ff', '#ffd370', '#ff7bd8'] as const
+    const wormPalettes = [
+      { color: '#59ebff', shadow: '#1771d8', highlight: '#b8fdff' },
+      { color: '#ffd27c', shadow: '#d57d39', highlight: '#fff0bf' },
+      { color: '#ff82dc', shadow: '#c2399e', highlight: '#ffc7f3' },
+    ] as const
 
     for (let index = 0; index < WORM_COUNT; index += 1) {
       const headSeed = wormSeeds[index] ?? { x: 4, y: 8, z: 4 }
-      const colorHex = wormColors[index % wormColors.length] ?? '#74f6ff'
+      const palette = wormPalettes[index % wormPalettes.length] ?? wormPalettes[0]
+      const colorHex = palette?.color ?? '#59ebff'
       const body = this.buildInitialBody(headSeed)
       const previousBody = body.map((segment) => ({ ...segment }))
+      const wormTexture = this.createWormTexture(
+        palette?.color ?? '#59ebff',
+        palette?.shadow ?? '#1771d8',
+        palette?.highlight ?? '#b8fdff',
+      )
+      this.disposableTextures.push(wormTexture)
       const material = new MeshStandardMaterial({
         color: colorHex,
-        emissive: colorHex,
-        emissiveIntensity: 0.55,
-        roughness: 0.62,
-        metalness: 0.08,
-        map: this.pixelTexture,
+        emissive: palette?.highlight ?? colorHex,
+        emissiveIntensity: 0.52,
+        roughness: 0.42,
+        metalness: 0.24,
+        map: wormTexture,
       })
 
       const meshes: Mesh<BoxGeometry, MeshStandardMaterial>[] = []
       for (let segmentIndex = 0; segmentIndex < WORM_LENGTH; segmentIndex += 1) {
         const segmentMesh = new Mesh(this.segmentGeometry, material)
+        const headBias = 1 - segmentIndex / Math.max(1, WORM_LENGTH - 1)
+        segmentMesh.scale.setScalar(1 + headBias * 0.08)
         const segmentCell = body[segmentIndex]
         if (segmentCell !== undefined) {
           segmentMesh.position.copy(this.gridToWorld(segmentCell))
@@ -203,8 +232,11 @@ export class ThreeDWormsScene extends BaseThreeScene {
         body,
         previousBody,
         meshes,
+        material,
+        pulsePhase: Math.random() * Math.PI * 2,
+        pulseSpeed: 2.4 + Math.random() * 1.8,
         stepTimerMs: Math.random() * 200,
-        stepIntervalMs: 155 + Math.random() * 80,
+        stepIntervalMs: 130 + Math.random() * 70,
       })
     }
   }
@@ -353,14 +385,16 @@ export class ThreeDWormsScene extends BaseThreeScene {
     canvas.height = 8
     const context = canvas.getContext('2d')
     if (context !== null) {
-      context.fillStyle = '#ffffff'
+      context.fillStyle = '#1f2d59'
       context.fillRect(0, 0, 8, 8)
-      context.fillStyle = '#c6d2ff'
+      context.fillStyle = '#2f4175'
       context.fillRect(0, 0, 4, 4)
       context.fillRect(4, 4, 4, 4)
-      context.fillStyle = '#7f8fd8'
+      context.fillStyle = '#18264d'
       context.fillRect(4, 0, 4, 4)
       context.fillRect(0, 4, 4, 4)
+      context.fillStyle = 'rgba(140, 181, 255, 0.16)'
+      context.fillRect(0, 0, 8, 2)
     }
 
     const texture = new CanvasTexture(canvas)
@@ -470,9 +504,10 @@ export class ThreeDWormsScene extends BaseThreeScene {
     const geometry = new BufferGeometry()
     geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
     const material = new LineBasicMaterial({
-      color: '#85b4ff',
+      color: '#79a7ff',
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.19,
+      depthWrite: false,
     })
 
     this.depthGridLines = new LineSegments(geometry, material)
@@ -558,13 +593,42 @@ export class ThreeDWormsScene extends BaseThreeScene {
     }
 
     return new MeshStandardMaterial({
-      color: '#2a3554',
-      emissive: '#101836',
-      emissiveIntensity: 0.28,
-      roughness: 0.72,
-      metalness: 0.04,
+      color: '#25345f',
+      emissive: '#152148',
+      emissiveIntensity: 0.35,
+      roughness: 0.66,
+      metalness: 0.06,
       map: texture,
     })
+  }
+
+  private createWormTexture(base: string, shadow: string, highlight: string): CanvasTexture {
+    const canvas = document.createElement('canvas')
+    canvas.width = 8
+    canvas.height = 8
+    const context = canvas.getContext('2d')
+    if (context !== null) {
+      context.fillStyle = base
+      context.fillRect(0, 0, 8, 8)
+      context.fillStyle = shadow
+      context.fillRect(0, 0, 2, 8)
+      context.fillRect(0, 0, 8, 2)
+      context.fillStyle = highlight
+      context.fillRect(4, 4, 2, 2)
+      context.fillRect(6, 2, 2, 2)
+      context.fillRect(2, 6, 2, 2)
+    }
+
+    const texture = new CanvasTexture(canvas)
+    texture.wrapS = RepeatWrapping
+    texture.wrapT = RepeatWrapping
+    texture.repeat.set(1, 1)
+    texture.colorSpace = SRGBColorSpace
+    texture.generateMipmaps = false
+    texture.magFilter = NearestFilter
+    texture.minFilter = NearestFilter
+    texture.needsUpdate = true
+    return texture
   }
 
   private fitCameraToChamber(camera: PerspectiveCamera): void {
