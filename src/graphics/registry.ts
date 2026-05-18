@@ -9,6 +9,7 @@ import { ThreeDWormsNeonPulseScene } from './scenes/three-d-worms/ThreeDWormsNeo
 import { ThreeDWormsNeonRushScene } from './scenes/three-d-worms/ThreeDWormsNeonRushScene'
 import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
 import { ThreeDWormsThermalDepthScene } from './scenes/three-d-worms/ThreeDWormsThermalDepthScene'
+import { ThreeDWormsThermalNeonBordersScene } from './scenes/three-d-worms/ThreeDWormsThermalNeonBordersScene'
 
 interface GraphicLeafNode {
   id: string
@@ -97,6 +98,13 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     description:
       'High-energy neon sequel with expressive chroma ribbons, pulse bars, and vivid particle shards for maximum visibility.',
     createScene: () => new ThreeDWormsNeonRushScene(),
+  },
+  {
+    id: 'three-d-worms-thermal-neon-borders',
+    title: '3D Worms: Thermal Neon Borders',
+    description:
+      'Warm neon sequel where all chamber borders glow with layered thin neon outlines for extra visibility and style.',
+    createScene: () => new ThreeDWormsThermalNeonBordersScene(),
   },
   {
     id: 'hypnotic-family',
