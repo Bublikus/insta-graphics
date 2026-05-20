@@ -6,7 +6,13 @@ import { FallingBallsGravityFillScene } from './scenes/falling-balls/FallingBall
 import { FallingBallsStaticScene } from './scenes/falling-balls/FallingBallsStaticScene'
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
+import { MazeHypnoticMetamorphosisScene } from './scenes/maze/MazeHypnoticMetamorphosisScene'
+import { MazeHypnoticRotatingPuzzlesScene } from './scenes/maze/MazeHypnoticRotatingPuzzlesScene'
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
+import { PuzzlesFluidOrbsScene } from './scenes/puzzles/PuzzlesFluidOrbsScene'
+import { PuzzlesHypnoticHeartFlowScene } from './scenes/puzzles/PuzzlesHypnoticHeartFlowScene'
+import { PuzzlesHypnoticRainFlowScene } from './scenes/puzzles/PuzzlesHypnoticRainFlowScene'
+import { PuzzlesHypnoticVoxelFlowScene } from './scenes/puzzles/PuzzlesHypnoticVoxelFlowScene'
 import { ThreeDWormsNeonPulseScene } from './scenes/three-d-worms/ThreeDWormsNeonPulseScene'
 import { ThreeDWormsNeonRushScene } from './scenes/three-d-worms/ThreeDWormsNeonRushScene'
 import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
@@ -91,6 +97,74 @@ export const GRAPHIC_TREE: GraphicNode[] = [
         description:
           'Small balls spawn from the ceiling center and naturally collide under gravity until filling roughly half the chamber.',
         createScene: () => new FallingBallsGravityFillScene(),
+      },
+    ],
+  },
+  {
+    id: 'puzzles-family',
+    title: 'Puzzles',
+    description: 'Puzzle-oriented 3D scenes built on the worms chamber foundation.',
+    children: [
+      {
+        id: 'puzzles-empty-chamber',
+        title: 'Puzzles: Empty Chamber',
+        description: 'A clean puzzle chamber using only the shared 3D scene environment.',
+        createScene: () => new FallingBallsStaticScene(),
+      },
+      {
+        id: 'puzzles-worm-grid',
+        title: 'Puzzles: Fluid Orbs',
+        description:
+          'Five glowing balls flow through the 3D chamber with soft fluid-like interaction forces.',
+        createScene: () => new PuzzlesFluidOrbsScene(),
+      },
+      {
+        id: 'puzzles-hypnotic-voxel-flow',
+        title: 'Puzzles: Hypnotic Voxel Flow',
+        description:
+          'Hypnotic 3D puzzle grid where neon voxels phase through depth and pulse in synchronized waves.',
+        createScene: () => new PuzzlesHypnoticVoxelFlowScene(),
+      },
+      {
+        id: 'puzzles-hypnotic-heart-flow',
+        title: 'Puzzles: Hypnotic Heart Flow',
+        description:
+          'Hypnotic neon voxel flow in a heart silhouette, pulsing and phasing through 3D depth.',
+        createScene: () => new PuzzlesHypnoticHeartFlowScene(),
+      },
+      {
+        id: 'puzzles-hypnotic-rain-flow',
+        title: 'Puzzles: Hypnotic Rain Flow',
+        description:
+          'A sequel with voxel rain streams falling through depth while preserving the same hypnotic neon rhythm.',
+        createScene: () => new PuzzlesHypnoticRainFlowScene(),
+      },
+    ],
+  },
+  {
+    id: 'maze-family',
+    title: 'Maze',
+    description: 'Maze-focused animations starting from an empty shared 3D chamber.',
+    children: [
+      {
+        id: 'maze-empty-chamber',
+        title: 'Maze: Empty Chamber',
+        description: 'A clean maze baseline using only the current chamber scene with no dynamic elements.',
+        createScene: () => new FallingBallsStaticScene(),
+      },
+      {
+        id: 'maze-hypnotic-rotating-puzzles',
+        title: 'Maze: Hypnotic Rotating Puzzles',
+        description:
+          'Layered 3D maze patterns rotating in alternating directions with pulsing neon depth for hypnotic eye-lock.',
+        createScene: () => new MazeHypnoticRotatingPuzzlesScene(),
+      },
+      {
+        id: 'maze-hypnotic-metamorphosis',
+        title: 'Maze: Hypnotic Metamorphosis',
+        description:
+          'A subsequent metamorph sequel where maze voxels morph shape continuously while crossing in hypnotic wave flow.',
+        createScene: () => new MazeHypnoticMetamorphosisScene(),
       },
     ],
   },
