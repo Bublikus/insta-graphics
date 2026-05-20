@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useNavigate, useParams } from 'react-router-dom'
 import { GraphicRuntime } from '../graphics/GraphicRuntime'
+import type { BaseGraphicScene, SceneBakeStatus } from '../graphics/base/BaseGraphicScene'
 import {
   DEFAULT_GRAPHIC_ID,
   GRAPHIC_TREE,
@@ -80,6 +81,16 @@ function GraphicPage() {
   const [statusMessage, setStatusMessage] = useState('Ready')
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null)
   const [downloadFileName, setDownloadFileName] = useState<string | null>(null)
+  const [activeScene, setActiveScene] = useState<BaseGraphicScene | null>(null)
+  const [bakeStatus, setBakeStatus] = useState<SceneBakeStatus>({
+    supported: false,
+    isBaking: false,
+    progress: 0,
+    hasBake: false,
+    useBakedPlayback: false,
+    bakedDurationSec: 0,
+    errorMessage: null,
+  })
 
   const recorderRef = useRef<MediaRecorder | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -255,6 +266,42 @@ function GraphicPage() {
     beginRecording(stageCanvas, { fps, durationSec })
   }, [beginRecording, durationSec, fps, isConverting, isRecording, stageCanvas])
 
+  const startBaked = useCallback(() => {
+    if (isRecording || isConverting || bakeStatus.isBaking) {
+      return
+    }
+
+    if (stageCanvas === null) {
+      setStatusMessage('Scene canvas is not available yet.')
+      return
+    }
+
+    if (activeScene === null) {
+      setStatusMessage('Scene is not available yet.')
+      return
+    }
+
+    const status = activeScene.getBakeStatus()
+    if (!status.hasBake) {
+      setStatusMessage('No baked animation found. Bake the scene first.')
+      return
+    }
+
+    // Switch to baked playback and rewind to baked frame one.
+    activeScene.setBakedPlaybackEnabled(true)
+    setStatusMessage('Recording baked playback from frame one...')
+    beginRecording(stageCanvas, { fps, durationSec })
+  }, [
+    activeScene,
+    beginRecording,
+    durationSec,
+    fps,
+    bakeStatus.isBaking,
+    isConverting,
+    isRecording,
+    stageCanvas,
+  ])
+
   const startFromBeginning = useCallback(() => {
     if (isRecording || isConverting) {
       return
@@ -264,6 +311,75 @@ function GraphicPage() {
     pendingStartConfigRef.current = { fps, durationSec }
     setRestartNonce((value) => value + 1)
   }, [durationSec, fps, isConverting, isRecording])
+
+  const bakeCurrent = useCallback(async () => {
+    if (activeScene === null || isRecording || isConverting) {
+      return
+    }
+    const status = activeScene.getBakeStatus()
+    if (!status.supported) {
+      setStatusMessage('This scene does not support baking.')
+      return
+    }
+
+    setStatusMessage('Baking from current timeline...')
+    try {
+      await activeScene.startBake({ fps, durationSec, fromStart: false })
+      const next = activeScene.getBakeStatus()
+      if (next.hasBake) {
+        setStatusMessage('Bake complete. You can record in baked playback mode.')
+      }
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Bake failed.')
+    }
+  }, [activeScene, durationSec, fps, isConverting, isRecording])
+
+  const bakeFromBeginning = useCallback(async () => {
+    if (activeScene === null || isRecording || isConverting) {
+      return
+    }
+    const status = activeScene.getBakeStatus()
+    if (!status.supported) {
+      setStatusMessage('This scene does not support baking.')
+      return
+    }
+
+    setStatusMessage('Baking from frame one...')
+    try {
+      await activeScene.startBake({ fps, durationSec, fromStart: true })
+      const next = activeScene.getBakeStatus()
+      if (next.hasBake) {
+        setStatusMessage('Bake complete. You can record in baked playback mode.')
+      }
+    } catch (error) {
+      setStatusMessage(error instanceof Error ? error.message : 'Bake failed.')
+    }
+  }, [activeScene, durationSec, fps, isConverting, isRecording])
+
+  const cancelBake = useCallback(() => {
+    if (activeScene === null) {
+      return
+    }
+    activeScene.cancelBake()
+    setStatusMessage('Cancelling bake...')
+  }, [activeScene])
+
+  const toggleBakedPlayback = useCallback(() => {
+    if (activeScene === null) {
+      return
+    }
+    const nextEnabled = !bakeStatus.useBakedPlayback
+    activeScene.setBakedPlaybackEnabled(nextEnabled)
+    setStatusMessage(nextEnabled ? 'Using baked playback.' : 'Using live simulation.')
+  }, [activeScene, bakeStatus.useBakedPlayback])
+
+  const clearBake = useCallback(() => {
+    if (activeScene === null) {
+      return
+    }
+    activeScene.clearBake()
+    setStatusMessage('Bake cleared.')
+  }, [activeScene])
 
   const togglePause = useCallback(() => {
     const recorder = recorderRef.current
@@ -290,6 +406,40 @@ function GraphicPage() {
       setStatusMessage('Recording...')
     }
   }, [])
+
+  useEffect(() => {
+    if (activeScene === null) {
+      setBakeStatus({
+        supported: false,
+        isBaking: false,
+        progress: 0,
+        hasBake: false,
+        useBakedPlayback: false,
+        bakedDurationSec: 0,
+        errorMessage: null,
+      })
+      return
+    }
+
+    let rafId: number | null = null
+    const tickBakeStatus = () => {
+      setBakeStatus(activeScene.getBakeStatus())
+      rafId = window.requestAnimationFrame(tickBakeStatus)
+    }
+    tickBakeStatus()
+
+    return () => {
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId)
+      }
+    }
+  }, [activeScene])
+
+  useEffect(() => {
+    if (bakeStatus.errorMessage !== null && !isRecording && !isConverting) {
+      setStatusMessage(bakeStatus.errorMessage)
+    }
+  }, [bakeStatus.errorMessage, isConverting, isRecording])
 
   useEffect(() => {
     if (!isRecording) {
@@ -389,6 +539,7 @@ function GraphicPage() {
         graphic={graphic}
         restartNonce={restartNonce}
         onCanvasChange={onCanvasChange}
+        onSceneChange={setActiveScene}
       />
       <aside className="sidebar sidebar-right">
         <RecordingPanel
@@ -401,7 +552,12 @@ function GraphicPage() {
           fileName={downloadFileName}
           statusMessage={statusMessage}
           canRecord={canRecord}
+          canBake={bakeStatus.supported}
           isConverting={isConverting}
+          isBaking={bakeStatus.isBaking}
+          bakeProgress={bakeStatus.progress}
+          hasBake={bakeStatus.hasBake}
+          useBakedPlayback={bakeStatus.useBakedPlayback}
           convertProgress={convertProgress}
           conversionLogs={conversionLogs}
           lastErrorLog={lastErrorLog}
@@ -412,9 +568,15 @@ function GraphicPage() {
             setDurationSec(Number.isFinite(value) ? Math.max(0, value) : 0)
           }
           onStartCurrent={startCurrent}
+          onStartBaked={startBaked}
           onStartFromBeginning={startFromBeginning}
           onStop={stopRecording}
           onTogglePause={togglePause}
+          onBakeCurrent={bakeCurrent}
+          onBakeFromBeginning={bakeFromBeginning}
+          onCancelBake={cancelBake}
+          onToggleBakedPlayback={toggleBakedPlayback}
+          onClearBake={clearBake}
         />
       </aside>
     </main>

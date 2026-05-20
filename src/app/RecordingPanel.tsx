@@ -8,7 +8,12 @@ interface RecordingPanelProps {
   fileName: string | null
   statusMessage: string
   canRecord: boolean
+  canBake: boolean
   isConverting: boolean
+  isBaking: boolean
+  bakeProgress: number
+  hasBake: boolean
+  useBakedPlayback: boolean
   convertProgress: number
   conversionLogs: string[]
   lastErrorLog: string | null
@@ -17,9 +22,15 @@ interface RecordingPanelProps {
   onFpsChange: (fps: 30 | 60) => void
   onDurationChange: (durationSec: number) => void
   onStartCurrent: () => void
+  onStartBaked: () => void
   onStartFromBeginning: () => void
   onStop: () => void
   onTogglePause: () => void
+  onBakeCurrent: () => void
+  onBakeFromBeginning: () => void
+  onCancelBake: () => void
+  onToggleBakedPlayback: () => void
+  onClearBake: () => void
 }
 
 function formatTimer(elapsedMs: number): string {
@@ -42,7 +53,12 @@ export function RecordingPanel({
   fileName,
   statusMessage,
   canRecord,
+  canBake,
   isConverting,
+  isBaking,
+  bakeProgress,
+  hasBake,
+  useBakedPlayback,
   convertProgress,
   conversionLogs,
   lastErrorLog,
@@ -51,9 +67,15 @@ export function RecordingPanel({
   onFpsChange,
   onDurationChange,
   onStartCurrent,
+  onStartBaked,
   onStartFromBeginning,
   onStop,
   onTogglePause,
+  onBakeCurrent,
+  onBakeFromBeginning,
+  onCancelBake,
+  onToggleBakedPlayback,
+  onClearBake,
 }: RecordingPanelProps) {
   return (
     <section className="sidebar-panel recording-panel" aria-label="Recording controls">
@@ -104,6 +126,13 @@ export function RecordingPanel({
         </button>
         <button
           type="button"
+          disabled={!canRecord || !hasBake || isRecording || isConverting || isBaking}
+          onClick={onStartBaked}
+        >
+          Start baked
+        </button>
+        <button
+          type="button"
           disabled={!canRecord || isRecording || isConverting}
           onClick={onStartFromBeginning}
         >
@@ -116,6 +145,42 @@ export function RecordingPanel({
           Stop
         </button>
       </div>
+
+      <div className="recording-buttons">
+        <button
+          type="button"
+          disabled={!canBake || isRecording || isConverting || isBaking}
+          onClick={onBakeCurrent}
+        >
+          Bake (current)
+        </button>
+        <button
+          type="button"
+          disabled={!canBake || isRecording || isConverting || isBaking}
+          onClick={onBakeFromBeginning}
+        >
+          Bake from beginning
+        </button>
+        <button type="button" disabled={!isBaking} onClick={onCancelBake}>
+          Cancel bake
+        </button>
+      </div>
+
+      <div className="recording-buttons">
+        <button type="button" disabled={!hasBake || isBaking} onClick={onToggleBakedPlayback}>
+          {useBakedPlayback ? 'Use live simulation' : 'Use baked playback'}
+        </button>
+        <button type="button" disabled={!hasBake || isBaking} onClick={onClearBake}>
+          Clear bake
+        </button>
+      </div>
+
+      {isBaking ? (
+        <div className="conversion-progress-wrap" aria-label="Bake progress">
+          <progress className="conversion-progress" value={Math.round(bakeProgress * 100)} max={100} />
+          <span>{Math.round(bakeProgress * 100)}%</span>
+        </div>
+      ) : null}
 
       <p className="recording-status">{statusMessage}</p>
       {isConverting ? (

@@ -22,9 +22,14 @@ interface FallingBallBody {
   sleepFrames: number
 }
 
-const MAX_BALLS = 1000
+interface BakedBallFrame {
+  count: number
+  positions: Float32Array
+}
+
+const MAX_BALLS = 10000
 const BALL_RADIUS = 0.11
-const BALL_SPAWN_INTERVAL_MS = 116
+const BALL_SPAWN_INTERVAL_MS = 6
 const FIXED_STEP_SEC = 1 / 90
 const GRAVITY_Y = -9.8
 const AIR_DRAG = 0.9988
@@ -97,9 +102,57 @@ export class FallingBallsGravityFillScene extends FallingBallsStaticScene {
     }
     this.ballTextures.length = 0
     this.ballGeometry.dispose()
-    this.balls.length = 0
-    this.spatialMap.clear()
+    this.resetSimulationState()
     super.beforeDestroy()
+  }
+
+  protected override supportsBake(): boolean {
+    return true
+  }
+
+  protected override resetForBake(): void {
+    this.resetSimulationState()
+  }
+
+  protected override captureBakeFrame(): unknown {
+    const positions = new Float32Array(this.balls.length * 3)
+    for (let index = 0; index < this.balls.length; index += 1) {
+      const ball = this.balls[index]
+      if (ball === undefined) {
+        continue
+      }
+      const base = index * 3
+      positions[base] = ball.position.x
+      positions[base + 1] = ball.position.y
+      positions[base + 2] = ball.position.z
+    }
+    return {
+      count: this.balls.length,
+      positions,
+    } satisfies BakedBallFrame
+  }
+
+  protected override applyBakeFrame(frame: unknown): void {
+    if (!this.isBakedBallFrame(frame)) {
+      return
+    }
+
+    const visibleCount = Math.min(frame.count, this.balls.length)
+    for (let index = 0; index < this.balls.length; index += 1) {
+      const ball = this.balls[index]
+      if (ball === undefined) {
+        continue
+      }
+      if (index >= visibleCount) {
+        ball.mesh.visible = false
+        continue
+      }
+
+      const base = index * 3
+      ball.position.set(frame.positions[base] ?? 0, frame.positions[base + 1] ?? 0, frame.positions[base + 2] ?? 0)
+      ball.mesh.visible = true
+      ball.mesh.position.copy(ball.position)
+    }
   }
 
   private createBallMaterials(): void {
@@ -170,6 +223,7 @@ export class FallingBallsGravityFillScene extends FallingBallsStaticScene {
       MathUtils.randFloatSpread(0.36),
     )
     mesh.position.copy(position)
+    mesh.visible = true
     this.scene.add(mesh)
 
     this.balls.push({
@@ -381,5 +435,30 @@ export class FallingBallsGravityFillScene extends FallingBallsStaticScene {
       ball.sleeping = true
       ball.velocity.set(0, 0, 0)
     }
+  }
+
+  private resetSimulationState(): void {
+    for (const ball of this.balls) {
+      this.scene.remove(ball.mesh)
+    }
+    this.balls.length = 0
+    this.spatialMap.clear()
+    this.dynamicIndices.length = 0
+    this.accumulatorSec = 0
+    this.spawnAccumulatorMs = 0
+    this.spawnedCount = 0
+  }
+
+  private isBakedBallFrame(frame: unknown): frame is BakedBallFrame {
+    if (typeof frame !== 'object' || frame === null) {
+      return false
+    }
+    if (!('count' in frame) || !('positions' in frame)) {
+      return false
+    }
+
+    const maybeCount = (frame as { count?: unknown }).count
+    const maybePositions = (frame as { positions?: unknown }).positions
+    return typeof maybeCount === 'number' && maybePositions instanceof Float32Array
   }
 }
