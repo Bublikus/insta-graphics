@@ -73,11 +73,18 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     ],
   },
   {
-    id: 'glass-cube-bounce',
-    title: 'Glass Cube Bounce',
-    description:
-      'Reflective glass cube with five textured spheres, 3D collisions, and realistic bouncing physics.',
-    createScene: () => new GlassCubeBounceScene(),
+    id: 'glass-cube-family',
+    title: 'Glass Cube Family',
+    description: 'Glass-cube based physics scenes.',
+    children: [
+      {
+        id: 'glass-cube-bounce',
+        title: 'Glass Cube Bounce',
+        description:
+          'Reflective glass cube with five textured spheres, 3D collisions, and realistic bouncing physics.',
+        createScene: () => new GlassCubeBounceScene(),
+      },
+    ],
   },
   {
     id: 'falling-balls-family',

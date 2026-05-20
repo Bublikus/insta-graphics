@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties, ReactElement } from 'react'
 import { Link } from 'react-router-dom'
 import type { GraphicNode } from '../graphics/registry'
@@ -94,28 +94,35 @@ export function GraphicNavigator({
   previousId,
   nextId,
 }: GraphicNavigatorProps) {
-  const [manualExpandedGroupId, setManualExpandedGroupId] = useState<string | null>(null)
-
   const activeExpandedGroupIds = useMemo(() => {
     const groupIds = new Set<string>()
     collectExpandedGroupIds(graphicTree, activeId, groupIds)
     return groupIds
   }, [activeId, graphicTree])
 
-  const expandedGroupIds = useMemo(() => {
-    if (activeExpandedGroupIds.size > 0) {
-      return activeExpandedGroupIds
-    }
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<string>>(() => new Set(activeExpandedGroupIds))
 
-    if (manualExpandedGroupId === null) {
-      return new Set<string>()
-    }
-
-    return new Set<string>([manualExpandedGroupId])
-  }, [activeExpandedGroupIds, manualExpandedGroupId])
+  useEffect(() => {
+    // Always reveal the active branch when navigating, without collapsing user-opened groups.
+    setExpandedGroupIds((current) => {
+      const next = new Set(current)
+      for (const groupId of activeExpandedGroupIds) {
+        next.add(groupId)
+      }
+      return next
+    })
+  }, [activeExpandedGroupIds])
 
   const onToggleGroup = (groupId: string) => {
-    setManualExpandedGroupId((current) => (current === groupId ? null : groupId))
+    setExpandedGroupIds((current) => {
+      const next = new Set(current)
+      if (next.has(groupId)) {
+        next.delete(groupId)
+      } else {
+        next.add(groupId)
+      }
+      return next
+    })
   }
 
   return (
