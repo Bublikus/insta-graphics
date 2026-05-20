@@ -18,6 +18,7 @@ import { ThreeDWormsNeonRushScene } from './scenes/three-d-worms/ThreeDWormsNeon
 import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
 import { ThreeDWormsThermalDepthScene } from './scenes/three-d-worms/ThreeDWormsThermalDepthScene'
 import { ThreeDWormsThermalNeonBordersScene } from './scenes/three-d-worms/ThreeDWormsThermalNeonBordersScene'
+import { WebglHypnotizedEngagementScene } from './scenes/webgl/WebglHypnotizedEngagementScene'
 
 interface GraphicLeafNode {
   id: string
@@ -172,6 +173,20 @@ export const GRAPHIC_TREE: GraphicNode[] = [
         description:
           'A subsequent metamorph sequel where maze voxels morph shape continuously while crossing in hypnotic wave flow.',
         createScene: () => new MazeHypnoticMetamorphosisScene(),
+      },
+    ],
+  },
+  {
+    id: 'webgl-animations-family',
+    title: 'WebGL Animations',
+    description: 'Hypnotic, high-engagement WebGL demos focused on depth and motion.',
+    children: [
+      {
+        id: 'webgl-hypnotized-engagement-demo',
+        title: 'WebGL: Hypnotized Engagement Demo',
+        description:
+          'Layered neon ring tunnel with depth drift, pulsing scales, and immersive hypnotic engagement.',
+        createScene: () => new WebglHypnotizedEngagementScene(),
       },
     ],
   },
