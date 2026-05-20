@@ -2,6 +2,8 @@ import type { BaseGraphicScene } from './base/BaseGraphicScene'
 import { DemoGradientScene } from './scenes/demo-gradient/DemoGradientScene'
 import { DemoGradientMemoryDriftScene } from './scenes/demo-gradient/DemoGradientMemoryDriftScene'
 import { DemoGradientVerticalSpinScene } from './scenes/demo-gradient/DemoGradientVerticalSpinScene'
+import { FallingBallsGravityFillScene } from './scenes/falling-balls/FallingBallsGravityFillScene'
+import { FallingBallsStaticScene } from './scenes/falling-balls/FallingBallsStaticScene'
 import { GlassCubeBounceScene } from './scenes/glass-cube-bounce/GlassCubeBounceScene'
 import { HypnoticPulseVortexScene } from './scenes/hypnotic-family/HypnoticPulseVortexScene'
 import { PixelMoireTunnelScene } from './scenes/hypnotic-family/PixelMoireTunnelScene'
@@ -70,6 +72,27 @@ export const GRAPHIC_TREE: GraphicNode[] = [
     description:
       'Reflective glass cube with five textured spheres, 3D collisions, and realistic bouncing physics.',
     createScene: () => new GlassCubeBounceScene(),
+  },
+  {
+    id: 'falling-balls-family',
+    title: 'Falling Balls',
+    description: 'Gravity-focused chamber scenes with static setup and dense natural sphere filling.',
+    children: [
+      {
+        id: 'falling-balls-static-chamber',
+        title: 'Falling Balls: Static Chamber',
+        description:
+          'The same 3D worms chamber setup as a clean baseline scene with no dynamic actors.',
+        createScene: () => new FallingBallsStaticScene(),
+      },
+      {
+        id: 'falling-balls-gravity-fill',
+        title: 'Falling Balls: Gravity Fill',
+        description:
+          'Small balls spawn from the ceiling center and naturally collide under gravity until filling roughly half the chamber.',
+        createScene: () => new FallingBallsGravityFillScene(),
+      },
+    ],
   },
   {
     id: 'three-d-worms-family',
