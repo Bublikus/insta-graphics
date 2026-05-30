@@ -18,6 +18,8 @@ import { ThreeDWormsNeonRushScene } from './scenes/three-d-worms/ThreeDWormsNeon
 import { ThreeDWormsScene } from './scenes/three-d-worms/ThreeDWormsScene'
 import { ThreeDWormsThermalDepthScene } from './scenes/three-d-worms/ThreeDWormsThermalDepthScene'
 import { ThreeDWormsThermalNeonBordersScene } from './scenes/three-d-worms/ThreeDWormsThermalNeonBordersScene'
+import { AtomsHydrogenSuperpositionRefinedScene } from './scenes/atoms/AtomsHydrogenSuperpositionRefinedScene'
+import { AtomsHydrogenSuperpositionScene } from './scenes/atoms/AtomsHydrogenSuperpositionScene'
 import { WebglHypnotizedEngagementScene } from './scenes/webgl/WebglHypnotizedEngagementScene'
 
 interface GraphicLeafNode {
@@ -229,6 +231,27 @@ export const GRAPHIC_TREE: GraphicNode[] = [
         description:
           'Warm neon sequel where all chamber borders glow with layered thin neon outlines for extra visibility and style.',
         createScene: () => new ThreeDWormsThermalNeonBordersScene(),
+      },
+    ],
+  },
+  {
+    id: 'atoms-family',
+    title: 'Atoms',
+    description: 'Physically grounded atomic visualizations with quantum probability clouds.',
+    children: [
+      {
+        id: 'atoms-hydrogen-superposition',
+        title: 'Hydrogen: Electron Superposition',
+        description:
+          'Hydrogen atom with a glowing proton and a 5f superposition electron cloud sampled from |ψ|² using radial and spherical harmonic wave functions.',
+        createScene: () => new AtomsHydrogenSuperpositionScene(),
+      },
+      {
+        id: 'atoms-hydrogen-superposition-refined',
+        title: 'Hydrogen: Electron Superposition (Refined)',
+        description:
+          'Sequel tuned to the prototype orbital — paired upper lobes, toroidal belt, and richer orange-red density coloring with denser |ψ|² sampling.',
+        createScene: () => new AtomsHydrogenSuperpositionRefinedScene(),
       },
     ],
   },
