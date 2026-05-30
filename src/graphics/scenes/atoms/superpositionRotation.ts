@@ -27,12 +27,16 @@ function multiplyMatrices(a: Complex[][], b: Complex[][]): Complex[][] {
   )
 
   for (let row = 0; row < rows; row += 1) {
+    const resultRow = result[row]
+    if (resultRow === undefined) {
+      continue
+    }
     for (let col = 0; col < cols; col += 1) {
       let sum: Complex = { re: 0, im: 0 }
       for (let index = 0; index < inner; index += 1) {
         sum = complexAdd(sum, complexMultiply(a[row]?.[index] ?? { re: 0, im: 0 }, b[index]?.[col] ?? { re: 0, im: 0 }))
       }
-      result[row][col] = sum
+      resultRow[col] = sum
     }
   }
 
@@ -62,11 +66,17 @@ function buildLyMatrix(l: number): Complex[][] {
     const row = m + l
     if (m < l) {
       const raising = 0.5 * Math.sqrt(l * (l + 1) - m * (m + 1))
-      matrix[row + 1][row] = { re: 0, im: -raising }
+      const targetRow = matrix[row + 1]
+      if (targetRow !== undefined) {
+        targetRow[row] = { re: 0, im: -raising }
+      }
     }
     if (m > -l) {
       const lowering = 0.5 * Math.sqrt(l * (l + 1) - m * (m - 1))
-      matrix[row - 1][row] = { re: 0, im: lowering }
+      const targetRow = matrix[row - 1]
+      if (targetRow !== undefined) {
+        targetRow[row] = { re: 0, im: lowering }
+      }
     }
   }
 
@@ -124,7 +134,11 @@ export function rotateSuperpositionAboutY(
     return []
   }
 
-  const { n, l } = states[0]
+  const first = states[0]
+  if (first === undefined) {
+    return []
+  }
+  const { n, l } = first
   const coefficients = new Map<number, Complex>()
   for (const state of states) {
     coefficients.set(state.m, { re: state.coeffRe, im: state.coeffIm })

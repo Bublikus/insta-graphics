@@ -50,9 +50,11 @@ export class AtomsSuperpositionScene extends BaseThreeScene {
   private vortexAngularVelocity: Float32Array | null = null
   private initialAtomicPositions: Float32Array | null = null
   private initialColors: Float32Array | null = null
+  private readonly config: AtomsSuperpositionSceneConfig
 
-  constructor(private readonly config: AtomsSuperpositionSceneConfig) {
+  constructor(config: AtomsSuperpositionSceneConfig) {
     super()
+    this.config = config
   }
 
   protected override afterSetup(): void {
@@ -456,6 +458,9 @@ export class AtomsSuperpositionScene extends BaseThreeScene {
 
     for (let index = 0; index < rawSamples.length; index += 1) {
       const sample = rawSamples[index]
+      if (sample === undefined) {
+        continue
+      }
       const offset = index * 3
       atomic[offset] = sample.x
       atomic[offset + 1] = sample.y
