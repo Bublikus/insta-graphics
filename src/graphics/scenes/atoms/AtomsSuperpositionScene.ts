@@ -24,6 +24,13 @@ import {
 import { sampleOrbitalCloud, sampleRadiusForStates } from './sampleOrbitalCloud'
 import { rotateSuperpositionAboutY } from './superpositionRotation'
 
+/** One precomputed frame: scene-space point positions, quantized colors, and camera position. */
+interface AtomsBakeFrame {
+  positions: Float32Array
+  colors: Uint8Array
+  camera: [number, number, number]
+}
+
 export class AtomsSuperpositionScene extends BaseThreeScene {
   private readonly atomGroup = new Group()
   private readonly protonGroup = new Group()
@@ -41,6 +48,8 @@ export class AtomsSuperpositionScene extends BaseThreeScene {
   private vortexBaseRadius: Float32Array | null = null
   private vortexBaseAzimuth: Float32Array | null = null
   private vortexAngularVelocity: Float32Array | null = null
+  private initialAtomicPositions: Float32Array | null = null
+  private initialColors: Float32Array | null = null
 
   constructor(private readonly config: AtomsSuperpositionSceneConfig) {
     super()
@@ -200,6 +209,93 @@ export class AtomsSuperpositionScene extends BaseThreeScene {
   protected override beforeDestroy(): void {
     this.electronCloud?.geometry.dispose()
     this.electronCloud?.material.dispose()
+  }
+
+  protected override supportsBake(): boolean {
+    return true
+  }
+
+  /** Rewind to the pristine t = 0 cloud so a "bake from beginning" is reproducible. */
+  protected override resetForBake(): void {
+    this.elapsedMs = 0
+    this.metropolisCursor = 0
+    this.peakDensity = this.estimatePeakDensity(this.config.superpositionStates)
+    this.densityReference = this.peakDensity * this.config.recolorPercentile
+
+    const atomic = this.atomicPositions
+    if (atomic !== null && this.initialAtomicPositions !== null) {
+      atomic.set(this.initialAtomicPositions)
+    }
+
+    const positions = this.electronPositionAttribute
+    if (positions !== null && atomic !== null) {
+      const scenePositions = positions.array as Float32Array
+      const scale = this.config.bohrSceneScale
+      for (let offset = 0; offset < atomic.length; offset += 3) {
+        scenePositions[offset] = (atomic[offset] ?? 0) * scale
+        scenePositions[offset + 1] = (atomic[offset + 1] ?? 0) * scale
+        scenePositions[offset + 2] = (atomic[offset + 2] ?? 0) * scale
+      }
+      positions.needsUpdate = true
+    }
+
+    const colors = this.electronColorAttribute
+    if (colors !== null && this.initialColors !== null) {
+      ;(colors.array as Float32Array).set(this.initialColors)
+      colors.needsUpdate = true
+    }
+  }
+
+  /** Snapshot the current frame's GPU buffers + camera (colors quantized to bytes). */
+  protected override captureBakeFrame(): unknown {
+    const positions = this.electronPositionAttribute
+    const colors = this.electronColorAttribute
+    if (positions === null || colors === null) {
+      return null
+    }
+
+    const positionArray = positions.array as Float32Array
+    const colorArray = colors.array as Float32Array
+    const quantizedColors = new Uint8Array(colorArray.length)
+    for (let index = 0; index < colorArray.length; index += 1) {
+      const channel = Math.round((colorArray[index] ?? 0) * 255)
+      quantizedColors[index] = channel < 0 ? 0 : channel > 255 ? 255 : channel
+    }
+
+    const camera = this.camera as PerspectiveCamera
+    const frame: AtomsBakeFrame = {
+      positions: positionArray.slice(),
+      colors: quantizedColors,
+      camera: [camera.position.x, camera.position.y, camera.position.z],
+    }
+    return frame
+  }
+
+  /** Replay a precomputed frame: no physics, just buffer copies + camera placement. */
+  protected override applyBakeFrame(frame: unknown): void {
+    const baked = frame as AtomsBakeFrame | null
+    if (baked === null) {
+      return
+    }
+
+    const positions = this.electronPositionAttribute
+    const colors = this.electronColorAttribute
+    if (positions === null || colors === null) {
+      return
+    }
+
+    ;(positions.array as Float32Array).set(baked.positions)
+    positions.needsUpdate = true
+
+    const colorArray = colors.array as Float32Array
+    for (let index = 0; index < baked.colors.length; index += 1) {
+      colorArray[index] = (baked.colors[index] ?? 0) / 255
+    }
+    colors.needsUpdate = true
+
+    const camera = this.camera as PerspectiveCamera
+    camera.position.set(baked.camera[0], baked.camera[1], baked.camera[2])
+    camera.lookAt(0, 0, 0)
   }
 
   private fitCameraToAtom(camera: PerspectiveCamera, aspect = camera.aspect): void {
@@ -376,6 +472,10 @@ export class AtomsSuperpositionScene extends BaseThreeScene {
     this.fitScale = this.config.targetOrbitalRadius / this.computeOrbitalExtent(positions)
     this.atomGroup.scale.setScalar(this.fitScale)
     this.atomicPositions = atomic
+    // Keep a pristine copy of the starting cloud so a bake can replay deterministically
+    // from t = 0 even after the Metropolis walk has mutated the live positions.
+    this.initialAtomicPositions = atomic.slice()
+    this.initialColors = colors.slice()
     if (this.config.vortexMode) {
       this.prepareVortexField(atomic)
     }
