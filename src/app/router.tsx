@@ -70,7 +70,7 @@ function GraphicPage() {
   const [stageCanvas, setStageCanvas] = useState<HTMLCanvasElement | null>(null)
   const [restartNonce, setRestartNonce] = useState(0)
   const [fps, setFps] = useState<30 | 60>(60)
-  const [durationSec, setDurationSec] = useState(0)
+  const [durationSec, setDurationSec] = useState(60)
   const [elapsedMs, setElapsedMs] = useState(0)
   const [isRecording, setIsRecording] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
