@@ -1,0 +1,42 @@
+---
+description: Version-control workflow for animation changes — commit and tag every change so any prior version is restorable
+alwaysApply: true
+---
+
+# Animation Versioning
+
+Every change to an animation must be committed and tagged so previous versions can be
+restored with zero loss of progress. Treat each scene's tags as its independent history.
+
+## After each completed animation change
+
+Once the change is done and `npx vite build` passes:
+
+1. **Commit** only the relevant files with a clear message:
+   ```bash
+   git add src/graphics/scenes/<group-id> src/graphics/registry.ts
+   git commit -m "<scene-id>: <what changed and why>"
+   ```
+2. **Tag** the commit with the per-scene version scheme `anim/<scene-id>/v<N>`:
+   ```bash
+   # next N = (highest existing) + 1, starting at v1
+   git tag -l "anim/<scene-id>/v*"
+   git tag -a "anim/<scene-id>/v<N>" -m "<scene-id> v<N>: <summary>"
+   ```
+   New scene → start at `v1`. Each subsequent change to that scene increments N.
+
+## Restoring a previous version
+
+- Inspect history: `git tag -l "anim/<scene-id>/v*"` then `git show <tag>`.
+- Restore just that scene's files without touching other work:
+  ```bash
+  git checkout <tag> -- src/graphics/scenes/<group-id>
+  ```
+  Then re-commit and tag as the next version (never rewrite published history).
+
+## Rules
+
+- One logical animation change = one commit = one tag. Don't batch unrelated scenes.
+- Always commit BEFORE starting a risky rework, so the working state is never lost.
+- Keep the build green before committing; never commit a broken scene.
+- Follow git safety: no `--force`, no history rewrites, no config changes, never skip hooks.

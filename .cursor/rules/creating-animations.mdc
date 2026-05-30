@@ -1,0 +1,31 @@
+---
+description: Conventions and best practices for creating animation scenes and groups in this graphics app
+alwaysApply: true
+---
+
+# Creating Animations (insta-graphics)
+
+When asked to add a new animation or a new group of animations, follow this workflow so it
+drops in without code friction. Reference `docs/AGENT_GUIDE.md` for the canonical steps.
+
+## Workflow
+
+1. **Folder**: create `src/graphics/scenes/<group-id>/` (kebab-case; the id becomes the URL `/g/<scene-id>`). Keep sibling variants in the same folder.
+2. **Base class**: extend `BaseThreeScene` (Three.js) or `BaseCanvas2DScene` (2D). Implement logic in the hooks `afterSetup()`, `update(deltaMs, elapsedMs)`, `beforeDestroy()` — do not override `onSetup/onResize/render` directly.
+3. **Register**: in `src/graphics/registry.ts`, import the scene and add a leaf `{ id, title, description, createScene }` to the relevant group's `children`, or add a new group node `{ id, title, description, children: [...] }` to `GRAPHIC_TREE`. Navigation, routing, and prev/next wire up automatically.
+4. **Verify**: `npx vite build` (do NOT rely on `npm run lint` — it tends to hang in this environment; `ReadLints` instead). When possible, open `/g/<scene-id>` on the dev server and screenshot to confirm.
+
+## Quality practices (learned from the Atoms family)
+
+- **Share an engine for sequels**: when a "subsequent/improved" variant is requested, extract a single configurable scene (e.g. `AtomsSuperpositionScene` + a `*Config` object) and have each variant pass its own config. Never copy-paste a whole scene file.
+- **Fit the camera to the content**: compute camera distance from FOV + aspect (9:16 stage) so the subject is fully framed and stays in-frame while rotating. Don't hardcode positions that overflow.
+- **Be mathematically honest**: for physics/science scenes use the real formulas (e.g. hydrogen wavefunctions `R_nl·Y_lm`, |ψ|² rejection sampling, probability-current vortex `ω(s)=ℏm/m_e·s²`). Document the formula in a comment.
+- **Performance**: allocate buffers once in `afterSetup`/setup; never allocate inside `update`/`render` hot loops. Precompute per-particle constants. Reuse geometries/materials. Mutate typed arrays + set `attribute.needsUpdate = true` instead of rebuilding geometry.
+- **Always dispose** custom geometries/materials in `beforeDestroy` to avoid leaks across route changes.
+- **Visual defaults**: black background for space scenes; prefer `PointsMaterial`/`Points` for large particle clouds. Be careful with `AdditiveBlending` — it saturates dense clouds to a flat color; use normal blending with `depthWrite: false` when density structure must stay readable.
+
+## Naming
+
+- Scene class: PascalCase ending in `Scene` (e.g. `AtomsHydrogenSuperpositionScene`).
+- Folder/route id and registry `id`: kebab-case (e.g. `atoms-hydrogen-superposition`).
+- Keep tuneable constants named and grouped at the top of the file (or in a `*Config`), so parameters can be adjusted without hunting through logic.
