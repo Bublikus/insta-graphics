@@ -11,6 +11,7 @@ import {
 } from '../graphics/registry'
 import { transcodeToInstagramMp4 } from '../recording/transcodeToInstagramMp4'
 import { GraphicNavigator } from './GraphicNavigator'
+import { MobileGraphicMenu } from './MobileGraphicMenu'
 import { RecordingPanel } from './RecordingPanel'
 
 type RecordingConfig = {
@@ -579,6 +580,13 @@ function GraphicPage() {
           onClearBake={clearBake}
         />
       </aside>
+      <MobileGraphicMenu
+        graphicTree={GRAPHIC_TREE}
+        activeId={graphic.id}
+        activeTitle={graphic.title}
+        previousId={previousId}
+        nextId={nextId}
+      />
     </main>
   )
 }
